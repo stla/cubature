@@ -1,7 +1,7 @@
 name:                cubature
 version:             0.1.0.0
 homepage:            https://github.com/stla/cubature#readme
-license:             GPL3
+license:             GPL-3
 author:              Stéphane Laurent
 maintainer:          laurent_step@yahoo.fr
 copyright:           2017 Stéphane Laurent
