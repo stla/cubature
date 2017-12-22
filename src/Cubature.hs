@@ -1,12 +1,11 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Cubature
   where
-import           Foreign               (poke)
 import           Foreign.C.Types       (CUInt(..))
-import           Foreign.Marshal.Alloc (free, malloc)
+import           Foreign.Marshal.Alloc (free, mallocBytes)
 import           Foreign.Marshal.Array (peekArray, pokeArray)
 import           Foreign.Ptr           (FunPtr, Ptr, freeHaskellFunPtr)
-import           Foreign.Storable      (peek)
+import           Foreign.Storable      (poke, peek, sizeOf)
 
 type Integrand = CUInt -> Ptr Double -> Ptr () -> CUInt -> Ptr Double -> IO Int
 
@@ -24,7 +23,7 @@ foreign import ccall safe "mintegration" c_cubature
     -> IO Double
 
 fun2integrand :: ([Double] -> Double) -> Int -> Integrand
-fun2integrand f n ndim x fdata fdim fval = do
+fun2integrand f n _ x _ _ fval = do
   list <- peekArray n x
   poke fval (f list)
   return 0
@@ -38,11 +37,11 @@ cubature :: Char                 -- cubature version, 'h' or 'p'
          -> IO (Double, Double)  -- output: integral value and error estimate
 cubature version f n xmin xmax relError = do
   fPtr <- integrandPtr (fun2integrand f n)
-  xminPtr <- malloc
+  xminPtr <- mallocBytes (n * sizeOf (0.0 :: Double))
   pokeArray xminPtr xmin
-  xmaxPtr <- malloc
+  xmaxPtr <- mallocBytes (n * sizeOf (0.0 :: Double))
   pokeArray xmaxPtr xmax
-  errorPtr <- malloc
+  errorPtr <- mallocBytes (sizeOf (0.0 :: Double))
   result <- c_cubature version fPtr n xminPtr xmaxPtr relError errorPtr
   errorEstimate <- peek errorPtr
   free errorPtr
